@@ -34,7 +34,7 @@ static void expr_array_resize(ExprArray *arr) {
 }
 
 static void expr_array_remove(ExprArray *arr) {
-	if (arr->len == 1 || arr->parsing) return;
+	if (arr->len <= 1 || arr->parsing) return;
 
 	// TODO do something with arr->data[0]
 	memmove(arr->data, &arr->data[1], --arr->len * sizeof(Expr));
