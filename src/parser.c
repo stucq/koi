@@ -145,6 +145,34 @@ static void parse_expr_binary(Parser *p, ExprType type) {
 	p->state.parsing = 0;
 }
 
+static void parse_expr_nested(Parser *p) {
+	p->state.parsing = 1;
+
+	int res;
+	int pos = p->state.len;
+
+	while ((res = parse_expr(p)) == 0);
+
+	if (res != T_RPAREN)
+		die_report(PARSER, "syntax error: wrong closing token", p->lexer.line);
+
+	int len = p->state.len - pos;
+	p->state.len = pos;
+
+	Expr *sequence = realloc(&p->state.data[pos], sizeof(Expr) * len);
+	if (!sequence) die_internal(PARSER, "realloc() returned null (could not copy data)");
+
+	for (int i = 0; i < len; i++) {
+		Expr *src = expr_clone(&p->state.data[pos + i]);
+		memcpy(&sequence[i], src, sizeof(Expr));
+	}
+
+	Expr *e = unary(E_EXPR, ival(len), sequence);
+	expr_array_insert(&p->state, expr_clone(e));
+
+	p->state.parsing = 0;
+};
+
 /* RETURN VALUE
  * ------------
  * 0 - OK
@@ -181,31 +209,8 @@ int parse_expr(Parser *p) {
 			break;
 
 		case T_LPAREN:
-		{
-			int res;
-			int pos = p->state.len;
-
-			while ((res = parse_expr(p)) == 0);
-
-			if (res != T_RPAREN)
-				die_report(PARSER, "syntax error: wrong closing token", p->lexer.line);
-
-			int len = p->state.len - pos;
-			p->state.len = pos;
-
-			Expr *sequence = realloc(&p->state.data[pos], sizeof(Expr) * len);
-			if (!sequence) die_internal(PARSER, "realloc() returned null (could not copy data)");
-
-			for (int i = 0; i < len; i++) {
-				Expr *src = expr_clone(&p->state.data[pos + i]);
-				memcpy(&sequence[i], src, sizeof(Expr));
-			}
-
-			Expr *e = unary(E_EXPR, ival(len), sequence);
-			expr_array_insert(&p->state, expr_clone(e));
-		};
-
-		break;
+			parse_expr_nested(p);
+			break;
 
 		case T_RPAREN: // TODO: add other closing tokens
 			return t.type;
