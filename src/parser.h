@@ -7,44 +7,44 @@
 #include "value.h"
 
 typedef enum {
-	E_EOF,
+  E_EOF,
 
-	E_ADD,
-	E_SUB,
-	E_MULT,
-	E_DIV,
+  E_ADD,
+  E_SUB,
+  E_MULT,
+  E_DIV,
 
-	E_EXPR,
+  E_EXPR,
 
-	E_INT,
+  E_INT,
 } ExprType;
 
 struct Expr {
-	ExprType type;
+  ExprType type;
 
-	struct Expr *left;
-	struct Expr *right;
+  struct Expr *left;
+  struct Expr *right;
 
-	InternalValue value;
+  InternalValue value;
 };
 
 typedef struct Expr Expr;
 
 typedef struct {
-	unsigned int len;
-	unsigned int capacity;
-	Expr *data;
+  unsigned int len;
+  unsigned int capacity;
+  Expr *data;
 
-	/**
-	 * 0: not in an expression, new expression is executed
-	 * 1: in an expression, new expression will be executed later
-	 */
-	int parsing;
+  /**
+   * 0: not in an expression, new expression is executed
+   * 1: in an expression, new expression will be executed later
+   */
+  int parsing;
 } ExprArray;
 
 typedef struct {
-	Lexer lexer;
-	ExprArray state;
+  Lexer lexer;
+  ExprArray state;
 } Parser;
 
 void parse_init(Parser *p, FILE *f);

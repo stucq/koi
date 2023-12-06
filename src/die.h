@@ -2,9 +2,9 @@
 #define DIE_H
 
 typedef enum {
-	MAIN,
-	LEXER,
-	PARSER,
+  MAIN,
+  LEXER,
+  PARSER,
 } CompilerPhase;
 
 /* reports one error on the client's end */
