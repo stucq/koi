@@ -13,6 +13,8 @@ static char *to_str(CompilerPhase phase) {
     return "lexer";
   case PARSER:
     return "parser";
+  case EXEC:
+    return "vm";
   }
 }
 

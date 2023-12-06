@@ -5,6 +5,7 @@ typedef enum {
   MAIN,
   LEXER,
   PARSER,
+  EXEC,
 } CompilerPhase;
 
 /* reports one error on the client's end */

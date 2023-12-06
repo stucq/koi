@@ -37,13 +37,15 @@ static void expr_array_remove(ExprArray *arr) {
   memmove(arr->data, &arr->data[1], --arr->len * sizeof(Expr));
 }
 
-static void expr_array_insert(ExprArray *arr, Expr *e) {
+static void expr_array_insert(ExprArray *arr, Expr *e, unsigned int line) {
+  e->line = line;
+
   if (arr->len == arr->capacity)
     expr_array_resize(arr);
 
   arr->data[arr->len++] = *e;
   expr_array_remove(arr);
-};
+}
 
 static void expr_array_free(ExprArray *arr) {
   for (int i = 0; i < arr->len; i++) {
@@ -54,7 +56,7 @@ static void expr_array_free(ExprArray *arr) {
   }
 
   free(arr->data);
-};
+}
 
 static Expr *expr(ExprType type, InternalValue value, Expr *left, Expr *right) {
   Expr *e = malloc(sizeof(Expr));
@@ -94,7 +96,7 @@ static Expr *leaf_empty(ExprType type) {
 void parse_init(Parser *p, FILE *f) {
   lexer_init(&p->lexer, f);
   expr_array_init(&p->state);
-};
+}
 
 static Expr *expr_clone(Expr *e) {
   Expr *lhs = NULL;
@@ -137,11 +139,12 @@ static void parse_expr_binary(Parser *p, ExprType type) {
 
   if (prec) {
     rhs = binary(type, lhs->right, rhs);
-    expr_array_insert(&p->state, binary(lhs->type, lhs->left, rhs));
+    expr_array_insert(&p->state, binary(lhs->type, lhs->left, rhs),
+                      p->lexer.line);
   }
 
   else
-    expr_array_insert(&p->state, binary(type, lhs, rhs));
+    expr_array_insert(&p->state, binary(type, lhs, rhs), p->lexer.line);
 
   p->state.parsing = 0;
 }
@@ -171,10 +174,10 @@ static void parse_expr_nested(Parser *p) {
   }
 
   Expr *e = unary(E_EXPR, ival(len), sequence);
-  expr_array_insert(&p->state, expr_clone(e));
+  expr_array_insert(&p->state, expr_clone(e), p->lexer.line);
 
   p->state.parsing = 0;
-};
+}
 
 /* RETURN VALUE
  * ------------
@@ -188,11 +191,11 @@ int parse_expr(Parser *p) {
 
   switch (t.type) {
   case T_EOF:
-    expr_array_insert(&p->state, leaf_empty(E_EOF));
+    expr_array_insert(&p->state, leaf_empty(E_EOF), p->lexer.line);
     return -1;
 
   case T_INTLIT:
-    expr_array_insert(&p->state, leaf(E_INT, t.value));
+    expr_array_insert(&p->state, leaf(E_INT, t.value), p->lexer.line);
     break;
 
   case T_PLUS:
@@ -223,10 +226,10 @@ int parse_expr(Parser *p) {
   }
 
   return 0;
-};
+}
 
 void parse_free(Parser *p) {
   lexer_free(&p->lexer);
   expr_array_free(&p->state);
   die_exit(PARSER);
-};
+}

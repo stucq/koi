@@ -21,11 +21,12 @@ typedef enum {
 
 struct Expr {
   ExprType type;
+  InternalValue value;
 
   struct Expr *left;
   struct Expr *right;
 
-  InternalValue value;
+  unsigned int line;
 };
 
 typedef struct Expr Expr;
