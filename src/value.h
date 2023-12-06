@@ -2,7 +2,7 @@
 #define VALUE_H
 
 typedef union {
-	int ival;
+  int ival;
 } InternalValue;
 
 InternalValue ival(int i);
