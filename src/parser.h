@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "lexer.h"
+#include "memory.h"
 #include "value.h"
 
 typedef enum {
@@ -49,7 +50,7 @@ typedef struct {
 } Parser;
 
 void parse_init(Parser *p, FILE *f);
-int parse_expr(Parser *p);
+int parse_expr(Parser *p, Memory *m);
 void parse_free(Parser *p);
 
 #endif

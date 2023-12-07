@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "die.h"
+#include "exec.h"
 #include "lexer.h"
 #include "parser.h"
 #include "value.h"
@@ -29,21 +30,23 @@ static void expr_array_resize(ExprArray *arr) {
         PARSER, "realloc() returned null (could not allocate data for parser)");
 }
 
-static void expr_array_remove(ExprArray *arr) {
-  if (arr->len <= 1 || arr->parsing) return;
+static void expr_array_remove(ExprArray *arr, Memory *m) {
+  if (arr->len <= 1 || arr->parsing)
+    return;
 
-  // TODO do something with arr->data[0]
+  exec(m, arr->data[0]);
   memmove(arr->data, &arr->data[1], --arr->len * sizeof(Expr));
 }
 
-static void expr_array_insert(ExprArray *arr, Expr *e, unsigned int line) {
+static void expr_array_insert(ExprArray *arr, Expr *e, unsigned int line,
+                              Memory *m) {
   e->line = line;
 
   if (arr->len == arr->capacity)
     expr_array_resize(arr);
 
   arr->data[arr->len++] = *e;
-  expr_array_remove(arr);
+  expr_array_remove(arr, m);
 }
 
 static void expr_array_free(ExprArray *arr) {
@@ -109,7 +112,7 @@ static Expr *expr_clone(Expr *e) {
   return expr(e->type, e->value, lhs, rhs);
 }
 
-static void parse_expr_binary(Parser *p, ExprType type) {
+static void parse_expr_binary(Parser *p, ExprType type, Memory *m) {
   p->state.parsing = 1;
 
   if (p->state.len == 0) {
@@ -128,7 +131,7 @@ static void parse_expr_binary(Parser *p, ExprType type) {
   char prec = type > lhs->type;
 
   // ...meaning it will be overwritten by rhs, which is read here...
-  if (parse_expr(p) != 0) {
+  if (parse_expr(p, m) != 0) {
     die_report(PARSER, "no right hand side", p->lexer.line);
     return;
   }
@@ -139,22 +142,22 @@ static void parse_expr_binary(Parser *p, ExprType type) {
   if (prec) {
     rhs = binary(type, lhs->right, rhs);
     expr_array_insert(&p->state, binary(lhs->type, lhs->left, rhs),
-                      p->lexer.line);
+                      p->lexer.line, m);
   }
 
   else
-    expr_array_insert(&p->state, binary(type, lhs, rhs), p->lexer.line);
+    expr_array_insert(&p->state, binary(type, lhs, rhs), p->lexer.line, m);
 
   p->state.parsing = 0;
 }
 
-static void parse_expr_nested(Parser *p) {
+static void parse_expr_nested(Parser *p, Memory *m) {
   p->state.parsing = 1;
 
   int res;
   int pos = p->state.len;
 
-  while ((res = parse_expr(p)) == 0)
+  while ((res = parse_expr(p, m)) == 0)
     ;
 
   if (res != T_RPAREN)
@@ -173,7 +176,7 @@ static void parse_expr_nested(Parser *p) {
   }
 
   Expr *e = unary(E_EXPR, ival(len), sequence);
-  expr_array_insert(&p->state, expr_clone(e), p->lexer.line);
+  expr_array_insert(&p->state, expr_clone(e), p->lexer.line, m);
 
   p->state.parsing = 0;
 }
@@ -185,36 +188,36 @@ static void parse_expr_nested(Parser *p) {
  *
  * otherwise (n): end block with token t
  */
-int parse_expr(Parser *p) {
+int parse_expr(Parser *p, Memory *m) {
   Token t = lexer_scan(&p->lexer);
 
   switch (t.type) {
   case T_EOF:
-    expr_array_insert(&p->state, leaf_empty(E_EOF), p->lexer.line);
+    expr_array_insert(&p->state, leaf_empty(E_EOF), p->lexer.line, m);
     return -1;
 
   case T_INTLIT:
-    expr_array_insert(&p->state, leaf(E_INT, t.value), p->lexer.line);
+    expr_array_insert(&p->state, leaf(E_INT, t.value), p->lexer.line, m);
     break;
 
   case T_PLUS:
-    parse_expr_binary(p, E_ADD);
+    parse_expr_binary(p, E_ADD, m);
     break;
 
   case T_MINUS:
-    parse_expr_binary(p, E_SUB);
+    parse_expr_binary(p, E_SUB, m);
     break;
 
   case T_STAR:
-    parse_expr_binary(p, E_MULT);
+    parse_expr_binary(p, E_MULT, m);
     break;
 
   case T_SLASH:
-    parse_expr_binary(p, E_DIV);
+    parse_expr_binary(p, E_DIV, m);
     break;
 
   case T_LPAREN:
-    parse_expr_nested(p);
+    parse_expr_nested(p, m);
     break;
 
   case T_RPAREN: // TODO: add other closing tokens

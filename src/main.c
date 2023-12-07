@@ -1,5 +1,7 @@
 #include <stdio.h>
 
+#include "exec.h"
+#include "memory.h"
 #include "parser.h"
 
 static int eval(Expr e) {
@@ -32,15 +34,17 @@ int main() {
   FILE *f = fopen("foo.koi", "r");
 
   Parser p;
-  Expr e;
+  Memory m;
 
   printf("A\n"); // necessary or printf doesn't work
-  parse_init(&p, f);
 
-  while (parse_expr(&p) != -1)
+  parse_init(&p, f);
+  memory_init(&m);
+
+  while (parse_expr(&p, &m) != -1)
     ;
 
-  printf("%d\n", eval(p.state.data[0]));
+  //printf("%d\n", eval(p.state.data[0]));
 
   parse_free(&p);
 }
