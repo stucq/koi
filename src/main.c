@@ -1,8 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "exec.h"
 #include "memory.h"
 #include "parser.h"
+
+#define MAX_INPUT_LEN 256
 
 static int eval(Expr e) {
   int left, right;
@@ -34,13 +38,23 @@ int main() {
   Parser p;
   Memory m;
 
-  int r;
-
-  parse_init(&p, "(1 + 2) * 3\n");
   memory_init(&m);
 
-  while ((r = parse_expr(&p, &m)) != -1)
-    ;
+  char *buf = malloc(MAX_INPUT_LEN);
+
+  while (1) {
+    fputs(">>> ", stdout);
+    fgets(buf, MAX_INPUT_LEN, stdin);
+
+    if (strcmp(buf, "exit\n") == 0)
+      break;
+
+    parse_init(&p, buf);
+
+    while (parse_expr(&p, &m) != -1)
+      ;
+  }
 
   parse_free(&p);
+  memory_free(&m);
 }
