@@ -31,20 +31,16 @@ static int eval(Expr e) {
 }
 
 int main() {
-  FILE *f = fopen("foo.koi", "r");
-
   Parser p;
   Memory m;
 
-  printf("A\n"); // necessary or printf doesn't work
+  int r;
 
-  parse_init(&p, f);
+  parse_init(&p, "(1 + 2) * 3\n");
   memory_init(&m);
 
-  while (parse_expr(&p, &m) != -1)
+  while ((r = parse_expr(&p, &m)) != -1)
     ;
-
-  //printf("%d\n", eval(p.state.data[0]));
 
   parse_free(&p);
 }

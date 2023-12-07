@@ -28,15 +28,13 @@ typedef struct {
 } Token;
 
 typedef struct {
-  // TODO: use char *, not FILE *
-  FILE *file;
+  char *input;
 
   unsigned int line;
-  int putback;
+  char putback;
 } Lexer;
 
-void lexer_init(Lexer *l, FILE *f);
+void lexer_init(Lexer *l, char *input);
 Token lexer_scan(Lexer *l);
-void lexer_free(Lexer *l);
 
 #endif

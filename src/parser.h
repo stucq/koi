@@ -49,7 +49,7 @@ typedef struct {
   ExprArray state;
 } Parser;
 
-void parse_init(Parser *p, FILE *f);
+void parse_init(Parser *p, char *input);
 int parse_expr(Parser *p, Memory *m);
 void parse_free(Parser *p);
 

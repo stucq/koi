@@ -5,8 +5,9 @@
 #include "die.h"
 #include "lexer.h"
 
-void lexer_init(Lexer *l, FILE *f) {
-  l->file = f;
+void lexer_init(Lexer *l, char *input) {
+  l->input = input;
+
   l->line = 1;
   l->putback = 0;
 }
@@ -14,23 +15,18 @@ void lexer_init(Lexer *l, FILE *f) {
 static int next(Lexer *l) {
   int c;
 
-  if (l->putback) {
-    c = l->putback;
-    l->putback = 0;
+  if (!l->putback) {
+    c = *(l->input++);
 
-    /* no need to check for '\n'; putback will never be set to it */
-  }
-
-  else {
-    c = fgetc(l->file);
     if (c == '\n')
       l->line++;
+  } else {
+    c = *(--l->input);
+    l->putback = 0;
   }
 
   return c;
 }
-
-static void putback(Lexer *l, int c) { l->putback = c; }
 
 static int skip(Lexer *l) {
   int c;
@@ -53,7 +49,7 @@ static int scan_int(Lexer *l, int c) {
     c = next(l);
   }
 
-  putback(l, c);
+  l->putback = 1;
   return val;
 }
 
@@ -62,7 +58,7 @@ Token lexer_scan(Lexer *l) {
   Token t;
 
   switch (c) {
-  case EOF:
+  case '\0':
     t.type = T_EOF;
     break;
   case '+':
@@ -102,5 +98,3 @@ Token lexer_scan(Lexer *l) {
 
   return t;
 }
-
-void lexer_free(Lexer *l) { fclose(l->file); }

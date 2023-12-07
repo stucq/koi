@@ -95,8 +95,8 @@ static Expr *leaf_empty(ExprType type) {
   return expr(type, v, NULL, NULL);
 }
 
-void parse_init(Parser *p, FILE *f) {
-  lexer_init(&p->lexer, f);
+void parse_init(Parser *p, char *input) {
+  lexer_init(&p->lexer, input);
   expr_array_init(&p->state);
 }
 
@@ -231,7 +231,8 @@ int parse_expr(Parser *p, Memory *m) {
 }
 
 void parse_free(Parser *p) {
-  lexer_free(&p->lexer);
   expr_array_free(&p->state);
+
+  die_exit(LEXER);
   die_exit(PARSER);
 }
